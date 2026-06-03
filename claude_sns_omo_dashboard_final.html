@@ -1,0 +1,303 @@
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 1.5rem; background: var(--color-background-tertiary);">
+
+<div style="max-width: 1200px; margin: 0 auto;">
+  
+  <!-- HEADER + ALERT -->
+  <div style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+      <div>
+        <h1 style="font-size: 24px; font-weight: 600; margin: 0; color: var(--color-text-primary);">SNS_OMO — Reroute Metrics</h1>
+        <p style="font-size: 14px; color: var(--color-text-secondary); margin: 0.5rem 0 0;">This week: Mon 5/5 – Sun 5/11</p>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button style="padding: 8px 16px; border: 0.5px solid var(--color-border-secondary); border-radius: 6px; background: var(--color-background-primary); cursor: pointer; font-size: 14px;">Export</button>
+        <button style="padding: 8px 16px; border: none; border-radius: 6px; background: #0066cc; color: white; cursor: pointer; font-size: 14px;">Refresh</button>
+      </div>
+    </div>
+    
+    <div style="background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; padding: 12px 16px; font-size: 14px; color: #92400e;">
+      <strong>⚠ Adoption 68%</strong> — below 80% target. 3 DCs below threshold. <a href="#" style="color: #92400e; text-decoration: underline;">Review DC-level detail below.</a>
+    </div>
+  </div>
+
+  <!-- KPI CARDS (5) -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 2rem;">
+    <div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 8px; padding: 1rem;">
+      <p style="font-size: 11px; color: var(--color-text-secondary); margin: 0 0 0.5rem; font-weight: 600; text-transform: uppercase;">Adoption Rate</p>
+      <p style="font-size: 28px; font-weight: 600; margin: 0; color: var(--color-text-primary);">68%</p>
+      <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0.5rem 0 0;">Target: 80% | 47/69</p>
+    </div>
+
+    <div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 8px; padding: 1rem;">
+      <p style="font-size: 11px; color: var(--color-text-secondary); margin: 0 0 0.5rem; font-weight: 600; text-transform: uppercase;">Avg Handling Time</p>
+      <p style="font-size: 28px; font-weight: 600; margin: 0; color: var(--color-text-primary);">3.8<span style="font-size: 16px; font-weight: 400;"> min</span></p>
+      <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0.5rem 0 0;">Target: ≤5 min</p>
+    </div>
+
+    <div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 8px; padding: 1rem;">
+      <p style="font-size: 11px; color: var(--color-text-secondary); margin: 0 0 0.5rem; font-weight: 600; text-transform: uppercase;">First-Pass Success</p>
+      <p style="font-size: 28px; font-weight: 600; margin: 0; color: var(--color-text-primary);">93%</p>
+      <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0.5rem 0 0;">Target: ≥95%</p>
+    </div>
+
+    <div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 8px; padding: 1rem;">
+      <p style="font-size: 11px; color: var(--color-text-secondary); margin: 0 0 0.5rem; font-weight: 600; text-transform: uppercase;">Hours Saved</p>
+      <p style="font-size: 28px; font-weight: 600; margin: 0; color: var(--color-text-primary);">16.2<span style="font-size: 16px; font-weight: 400;"> hrs</span></p>
+      <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0.5rem 0 0;">vs 30-40 min manual</p>
+    </div>
+
+    <div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 8px; padding: 1rem;">
+      <p style="font-size: 11px; color: var(--color-text-secondary); margin: 0 0 0.5rem; font-weight: 600; text-transform: uppercase;">Reroutes This Week</p>
+      <p style="font-size: 28px; font-weight: 600; margin: 0; color: var(--color-text-primary);">69</p>
+      <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0.5rem 0 0;">avg 9.9/day</p>
+    </div>
+  </div>
+
+  <!-- UNIFIED TREND CHART -->
+  <div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem;">
+    <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 1rem; color: var(--color-text-primary);">Adoption & Handling Time Trend</h2>
+    <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0 0 1rem;">Dual-axis view: % eligible (left) vs min per reroute (right)</p>
+    <div style="position: relative; width: 100%; height: 280px;">
+      <canvas id="dualAxisChart" role="img" aria-label="Adoption percentage and handling time dual-axis trend">Dual-axis chart</canvas>
+    </div>
+  </div>
+
+  <!-- OUTCOMES + BY DC (side by side) -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 2rem;">
+    
+    <!-- OUTCOMES WITH STACKED BARS -->
+    <div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 8px; padding: 1.5rem;">
+      <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 1.5rem; color: var(--color-text-primary);">Outcomes (This Week)</h2>
+      
+      <!-- Success bar -->
+      <div style="margin-bottom: 1.2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 13px; font-weight: 500; color: var(--color-text-primary);">Success</span>
+          <span style="font-size: 13px; font-weight: 600; color: var(--color-text-primary);">93%</span>
+        </div>
+        <div style="width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+          <div style="width: 93%; height: 100%; background: #10b981;"></div>
+        </div>
+      </div>
+
+      <!-- Rework bar -->
+      <div style="margin-bottom: 1.2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 13px; font-weight: 500; color: var(--color-text-primary);">Rework</span>
+          <span style="font-size: 13px; font-weight: 600; color: var(--color-text-primary);">7%</span>
+        </div>
+        <div style="width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+          <div style="width: 7%; height: 100%; background: #f59e0b;"></div>
+        </div>
+      </div>
+
+      <!-- Failed bar -->
+      <div style="margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 13px; font-weight: 500; color: var(--color-text-primary);">Failed</span>
+          <span style="font-size: 13px; font-weight: 600; color: var(--color-text-primary);">0%</span>
+        </div>
+        <div style="width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+          <div style="width: 0%; height: 100%; background: #ef4444;"></div>
+        </div>
+      </div>
+
+      <!-- Rework reasons -->
+      <div style="background: var(--color-background-secondary); border-radius: 6px; padding: 0.75rem; margin-bottom: 1.5rem; font-size: 12px;">
+        <p style="margin: 0 0 0.5rem; font-weight: 600; color: var(--color-text-primary);">Reasons for rework (5):</p>
+        <ul style="margin: 0; padding-left: 1.25rem; color: var(--color-text-secondary);">
+          <li style="margin: 0.25rem 0;">BOL qty fix (3)</li>
+          <li style="margin: 0.25rem 0;">Tracking update (1)</li>
+          <li style="margin: 0.25rem 0;">DC change (1)</li>
+        </ul>
+      </div>
+
+      <!-- Total -->
+      <div style="border-top: 0.5px solid var(--color-border-tertiary); padding-top: 1rem; font-size: 12px;">
+        <p style="margin: 0; color: var(--color-text-secondary);">Total: <strong style="color: var(--color-text-primary);">69 reroutes</strong></p>
+        <p style="margin: 0.25rem 0 0; color: var(--color-text-secondary);">avg <strong style="color: var(--color-text-primary);">9.9/day</strong></p>
+      </div>
+    </div>
+
+    <!-- BY DC (5 ALL SHOWN) -->
+    <div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 8px; padding: 1.5rem;">
+      <h2 style="font-size: 16px; font-weight: 600; margin: 0 0 1rem; color: var(--color-text-primary);">By DC (Top Performers)</h2>
+      
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+        <thead style="border-bottom: 0.5px solid var(--color-border-tertiary);">
+          <tr>
+            <th style="text-align: left; padding: 0 0 8px; font-weight: 600; color: var(--color-text-secondary); font-size: 11px; text-transform: uppercase;">DC Name</th>
+            <th style="text-align: right; padding: 0 0 8px; font-weight: 600; color: var(--color-text-secondary); font-size: 11px; text-transform: uppercase;">Reroutes</th>
+            <th style="text-align: right; padding: 0 0 8px; font-weight: 600; color: var(--color-text-secondary); font-size: 11px; text-transform: uppercase;">Avg Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 0.5px solid var(--color-border-tertiary);">
+            <td style="padding: 10px 0; color: var(--color-text-primary); font-weight: 500;">Grand Prairie</td>
+            <td style="text-align: right; padding: 10px 0; color: var(--color-text-secondary);">18</td>
+            <td style="text-align: right; padding: 10px 0; color: var(--color-text-secondary);">3.6 m</td>
+          </tr>
+          <tr style="border-bottom: 0.5px solid var(--color-border-tertiary);">
+            <td style="padding: 10px 0; color: var(--color-text-primary); font-weight: 500;">Meadville</td>
+            <td style="text-align: right; padding: 10px 0; color: var(--color-text-secondary);">16</td>
+            <td style="text-align: right; padding: 10px 0; color: var(--color-text-secondary);">3.9 m</td>
+          </tr>
+          <tr style="border-bottom: 0.5px solid var(--color-border-tertiary);">
+            <td style="padding: 10px 0; color: var(--color-text-primary); font-weight: 500;">Indy <span style="font-size: 11px; color: var(--color-text-secondary);">(PepFlex)</span></td>
+            <td style="text-align: right; padding: 10px 0; color: var(--color-text-secondary);">14</td>
+            <td style="text-align: right; padding: 10px 0; color: var(--color-text-secondary);">4.1 m</td>
+          </tr>
+          <tr style="border-bottom: 0.5px solid var(--color-border-tertiary);">
+            <td style="padding: 10px 0; color: var(--color-text-primary); font-weight: 500;">Phoenix <span style="font-size: 11px; color: var(--color-text-secondary);">(PepFlex)</span></td>
+            <td style="text-align: right; padding: 10px 0; color: var(--color-text-secondary);">12</td>
+            <td style="text-align: right; padding: 10px 0; color: var(--color-text-secondary);">3.5 m</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; color: var(--color-text-primary); font-weight: 500;">Joliet <span style="font-size: 11px; color: var(--color-text-secondary);">(PepFlex)</span></td>
+            <td style="text-align: right; padding: 10px 0; color: var(--color-text-secondary);">9</td>
+            <td style="text-align: right; padding: 10px 0; color: var(--color-text-secondary);">3.8 m</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="border-top: 0.5px solid var(--color-border-tertiary); margin-top: 1rem; padding-top: 1rem; font-size: 12px;">
+        <p style="margin: 0; color: var(--color-text-secondary);">Total DCs: <strong style="color: var(--color-text-primary);">5</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRILL-DOWN (Accordion/Tab style) -->
+  <div style="background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: 8px; overflow: hidden;">
+    
+    <!-- Tab header -->
+    <div style="display: flex; border-bottom: 0.5px solid var(--color-border-tertiary);">
+      <button onclick="document.getElementById('tab-reroute').style.display='block'; document.getElementById('tab-reroute-btn').style.borderBottom='2px solid black'; document.getElementById('tab-more').style.display='none'; document.getElementById('tab-more-btn').style.borderBottom='none';" id="tab-reroute-btn" style="flex: 1; padding: 1rem; text-align: left; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 500; border-bottom: 2px solid black; color: var(--color-text-primary);">Reroute Type Breakdown</button>
+      <button onclick="document.getElementById('tab-more').style.display='block'; document.getElementById('tab-more-btn').style.borderBottom='2px solid black'; document.getElementById('tab-reroute').style.display='none'; document.getElementById('tab-reroute-btn').style.borderBottom='none';" id="tab-more-btn" style="flex: 1; padding: 1rem; text-align: left; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--color-text-secondary); border-bottom: none;">More Analysis</button>
+    </div>
+
+    <!-- Tab content: Reroute Type -->
+    <div id="tab-reroute" style="padding: 1.5rem;">
+      <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0 0 1rem;">5 scenarios • 69 total reroutes</p>
+      <table style="width: 100%; font-size: 13px;">
+        <thead style="border-bottom: 0.5px solid var(--color-border-tertiary);">
+          <tr>
+            <th style="text-align: left; padding: 8px 0; font-weight: 600; color: var(--color-text-secondary); font-size: 11px; text-transform: uppercase;">Scenario</th>
+            <th style="text-align: center; padding: 8px 0; font-weight: 600; color: var(--color-text-secondary); font-size: 11px; text-transform: uppercase;">Count</th>
+            <th style="text-align: center; padding: 8px 0; font-weight: 600; color: var(--color-text-secondary); font-size: 11px; text-transform: uppercase;">Success %</th>
+            <th style="text-align: center; padding: 8px 0; font-weight: 600; color: var(--color-text-secondary); font-size: 11px; text-transform: uppercase;">Avg Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 0.5px solid var(--color-border-tertiary);">
+            <td style="padding: 8px 0; color: var(--color-text-primary);">PepFlex → PepFlex (new SO)</td>
+            <td style="text-align: center; padding: 8px 0;">18</td>
+            <td style="text-align: center; padding: 8px 0;">94%</td>
+            <td style="text-align: center; padding: 8px 0;">4.0 m</td>
+          </tr>
+          <tr style="border-bottom: 0.5px solid var(--color-border-tertiary);">
+            <td style="padding: 8px 0; color: var(--color-text-primary);">Non-PepFlex → Non-PepFlex (new SO)</td>
+            <td style="text-align: center; padding: 8px 0;">16</td>
+            <td style="text-align: center; padding: 8px 0;">94%</td>
+            <td style="text-align: center; padding: 8px 0;">3.5 m</td>
+          </tr>
+          <tr style="border-bottom: 0.5px solid var(--color-border-tertiary);">
+            <td style="padding: 8px 0; color: var(--color-text-primary);">PepFlex → Non-PepFlex (new SO)</td>
+            <td style="text-align: center; padding: 8px 0;">14</td>
+            <td style="text-align: center; padding: 8px 0;">85%</td>
+            <td style="text-align: center; padding: 8px 0;">4.2 m</td>
+          </tr>
+          <tr style="border-bottom: 0.5px solid var(--color-border-tertiary);">
+            <td style="padding: 8px 0; color: var(--color-text-primary);">Non-PepFlex → PepFlex (existing SO)</td>
+            <td style="text-align: center; padding: 8px 0;">12</td>
+            <td style="text-align: center; padding: 8px 0;">75%</td>
+            <td style="text-align: center; padding: 8px 0;">4.5 m</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: var(--color-text-primary);">Other</td>
+            <td style="text-align: center; padding: 8px 0;">9</td>
+            <td style="text-align: center; padding: 8px 0;">96%</td>
+            <td style="text-align: center; padding: 8px 0;">3.6 m</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Tab content: More Analysis -->
+    <div id="tab-more" style="padding: 1.5rem; display: none;">
+      <p style="font-size: 13px; color: var(--color-text-secondary); margin: 0;">Additional analysis and metrics coming in Phase 2. Topics: On-time delivery vs historical, split shipment reduction, cost comparison.</p>
+    </div>
+  </div>
+
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+  // Dual-axis chart
+  new Chart(document.getElementById('dualAxisChart'), {
+    type: 'line',
+    data: {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      datasets: [
+        {
+          label: 'Adoption %',
+          data: [62, 65, 68, 70, 68, 70, 72],
+          borderColor: '#2563eb',
+          backgroundColor: '#2563eb20',
+          yAxisID: 'y',
+          tension: 0.4,
+          fill: true,
+          pointRadius: 5,
+          pointBackgroundColor: '#2563eb',
+          borderWidth: 2
+        },
+        {
+          label: 'Handling Time (min)',
+          data: [4.2, 4.0, 3.9, 3.8, 3.9, 3.7, 3.8],
+          borderColor: '#7c3aed',
+          backgroundColor: '#7c3aed20',
+          yAxisID: 'y1',
+          tension: 0.4,
+          fill: true,
+          pointRadius: 5,
+          pointBackgroundColor: '#7c3aed',
+          borderWidth: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: { boxWidth: 12, font: { size: 12 }, usePointStyle: true }
+        }
+      },
+      scales: {
+        y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          min: 55,
+          max: 75,
+          ticks: { callback: v => v + '%' },
+          title: { display: true, text: 'Adoption %' }
+        },
+        y1: {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          min: 3,
+          max: 5,
+          ticks: { callback: v => v + 'm' },
+          title: { display: true, text: 'Handling Time' },
+          grid: { drawOnChartArea: false }
+        }
+      }
+    }
+  });
+</script>

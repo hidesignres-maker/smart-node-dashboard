@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Node Reroute Dashboard — Version B</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0; padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f3f4f6;
+      color: #1f2937;
+      font-size: 13px;
+    }
+
+    .page  { padding: 1.5rem 1.75rem; }
+    .inner { max-width: 1320px; margin: 0 auto; }
+
+    /* ── Cards ───────────────────────────────────────────── */
+    .card {
+      background: white;
+      border: 0.5px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 1.25rem 1.5rem;
+    }
+    .card-title { font-size: 14px; font-weight: 600; margin: 0 0 0.2rem; color: #1f2937; }
+    .card-sub   { font-size: 12px; color: #6b7280; margin: 0; }
+
+    /* ── Grid helpers ────────────────────────────────────── */
+    .row   { display: grid; gap: 12px; margin-bottom: 12px; }
+    .col-7 { grid-template-columns: 7fr 3fr; }
+    .col-4 { grid-template-columns: 4fr 6fr; }
+    .col-6 { grid-template-columns: 6fr 4fr; }
+
+    /* ── KPI ─────────────────────────────────────────────── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 12px; }
+    .kpi-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #6b7280; margin: 0 0 .4rem; }
+    .kpi-val   { font-size: 28px; font-weight: 700; margin: 0; line-height: 1.1; color: #1f2937; }
+    .kpi-val span { font-size: 16px; font-weight: 400; }
+    .kpi-s1    { font-size: 12px; margin: .35rem 0 0; }
+    .kpi-s2    { font-size: 11px; color: #9ca3af; margin: .15rem 0 0; }
+
+    /* ── Tables (generic) ────────────────────────────────── */
+    .tbl { width: 100%; border-collapse: collapse; }
+    .tbl th {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .04em; color: #6b7280;
+      padding: 0 0 8px; text-align: left; border-bottom: 0.5px solid #e5e7eb;
+    }
+    .tbl th.r, .tbl td.r { text-align: right; }
+    .tbl td { padding: 9px 0; border-bottom: 0.5px solid #f3f4f6; color: #374151; }
+    .tbl tbody tr:last-child td { border-bottom: none; }
+    .tbl-footer { display: flex; justify-content: space-between; border-top: 0.5px solid #e5e7eb; margin-top: .75rem; padding-top: .75rem; font-size: 12px; color: #6b7280; }
+
+    /* ── Neutral Pills (all reasons + resolution) ────────── */
+    .pill {
+      display: inline-block;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+      font-weight: 500;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      color: #374151;
+    }
+    .pill-exploratory {
+      background: #ede9fe; color: #5b21b6;
+      font-size: 10px; padding: 2px 8px; border-radius: 10px;
+      font-weight: 600; letter-spacing: .02em;
+      border: none;
+    }
+
+    /* ── Source DC Performance table ─────────────────────── */
+    #perfTable { border-collapse: collapse; }
+    #perfTable thead tr { background: #f3f4f6; }
+    #perfTable thead th {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .04em; color: #6b7280;
+      padding: 9px 10px 9px 0; text-align: left;
+      border-top: 1px solid #e5e7eb;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    #perfTable thead th:first-child { border-radius: 4px 0 0 4px; padding-left: 10px; padding-right: 0; }
+    #perfTable thead th:last-child  { border-radius: 0 4px 4px 0; padding-right: 12px; }
+
+    #perfTbody tr.dc-row { cursor: pointer; transition: background .12s; }
+    #perfTbody tr.dc-row:hover td { background: #f9fafb; }
+    #perfTbody tr.dc-row.expanded td { background: #f0f4ff; }
+    #perfTbody tr.dc-row.expanded td.caret-cell {
+      border-left: 3px solid #6366f1;
+    }
+    #perfTbody tr.dc-row td { padding: 13px 0; border-bottom: none; vertical-align: middle; }
+    #perfTbody tr.dc-row td.caret-cell {
+      width: 40px;
+      padding-left: 12px;
+      color: #6b7280;
+      font-size: 15px;
+      font-weight: 600;
+      user-select: none;
+      line-height: 1;
+    }
+    #perfTbody tr.dc-row.expanded td.caret-cell { color: #4f46e5; }
+    #perfTbody tr.sep td { border-bottom: 1px solid #e5e7eb; padding: 0; }
+    #perfTbody tr.expand-row td { padding: 0; }
+
+    /* ── Expand panel ────────────────────────────────────── */
+    .expand-panel {
+      background: #f8f9fc;
+      border-left: 3px solid #6366f1;
+      border-bottom: 1px solid #e5e7eb;
+      padding: .85rem 1.5rem 1.1rem 1.5rem;
+    }
+    .expand-panel-title { font-size: 12px; font-weight: 600; color: #374151; margin: 0 0 .65rem; }
+
+    .inner-tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .inner-tbl thead tr { background: #f3f4f6; }
+    .inner-tbl th {
+      font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+      color: #6b7280; padding: 7px 10px 7px 0; text-align: left;
+      border-top: 1px solid #e5e7eb;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .inner-tbl th:first-child { padding-left: 8px; border-radius: 3px 0 0 3px; }
+    .inner-tbl th.r, .inner-tbl td.r { text-align: right; }
+    .inner-tbl td { padding: 9px 10px 9px 0; border-bottom: 1px solid #f0f0f0; color: #374151; }
+    .inner-tbl td:first-child { padding-left: 8px; }
+    .inner-tbl tbody tr:last-child td { border-bottom: none; }
+    .mono { font-family: 'SF Mono', 'Roboto Mono', monospace; color: #9ca3af; font-size: 11px; }
+
+    /* ── Single-DC standalone detail table ───────────────── */
+    .dc-detail-tbl { width: 100%; border-collapse: collapse; font-size: 12px; table-layout: fixed; }
+    .dc-detail-tbl thead tr { background: #f3f4f6; }
+    .dc-detail-tbl th {
+      font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+      color: #6b7280; padding: 10px 10px 10px 0; text-align: left;
+      border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb;
+    }
+    .dc-detail-tbl th:first-child { padding-left: 12px; border-radius: 4px 0 0 4px; }
+    .dc-detail-tbl th:last-child  { border-radius: 0 4px 4px 0; }
+    .dc-detail-tbl th.r, .dc-detail-tbl td.r { text-align: right; }
+    .dc-detail-tbl td { padding: 11px 10px 11px 0; border-bottom: 1px solid #f0f0f0; color: #374151; vertical-align: middle; }
+    .dc-detail-tbl td:first-child { padding-left: 12px; }
+    .dc-detail-tbl tbody tr:last-child td { border-bottom: none; }
+    .dc-detail-tbl tbody tr:hover td { background: #f9fafb; }
+
+    /* ── Header ──────────────────────────────────────────── */
+    .header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
+    .header-controls { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; position: relative; }
+    .ctrl-group { display: flex; flex-direction: column; gap: 3px; position: relative; }
+    .ctrl-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #9ca3af; }
+    select, button {
+      padding: 7px 11px; border: 0.5px solid #d1d5db; border-radius: 6px;
+      font-size: 13px; cursor: pointer; color: #1f2937; background: white;
+      font-family: inherit;
+    }
+    button.primary { background: #0066cc; color: white; border: none; }
+    button:hover   { background: #f9fafb; }
+    button.primary:hover { background: #0052a3; }
+
+    /* ── Date picker button ──────────────────────────────── */
+    #datePickerBtn {
+      padding: 7px 14px 7px 11px;
+      background: white;
+      border: 0.5px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #1f2937;
+      cursor: pointer;
+      font-family: inherit;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    #datePickerBtn:hover { background: #f9fafb; }
+    #datePickerBtn .dp-caret { color: #9ca3af; font-size: 10px; }
+
+    /* ── Date picker popover ─────────────────────────────── */
+    .date-picker-popover {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      z-index: 1000;
+      background: white;
+      border: 0.5px solid #e5e7eb;
+      border-radius: 10px;
+      box-shadow: 0 8px 28px rgba(0,0,0,.13), 0 2px 6px rgba(0,0,0,.06);
+      padding: 1rem;
+      width: 530px;
+      min-width: 530px;
+    }
+    .dp-segments {
+      display: flex;
+      gap: 2px;
+      background: #f3f4f6;
+      border-radius: 7px;
+      padding: 2px;
+      margin-bottom: .9rem;
+      width: fit-content;
+    }
+    .dp-seg {
+      border: none;
+      background: transparent;
+      border-radius: 5px;
+      padding: 5px 16px;
+      font-size: 12px;
+      cursor: pointer;
+      color: #6b7280;
+      font-weight: 500;
+      font-family: inherit;
+      transition: background .1s;
+    }
+    .dp-seg.dp-seg-active {
+      background: white;
+      color: #1f2937;
+      box-shadow: 0 1px 3px rgba(0,0,0,.1);
+    }
+    .dp-body { display: flex; gap: 0; align-items: flex-start; }
+    .dp-grids { display: flex; gap: 16px; flex: 1; }
+    .dp-grid-half { flex: 1; }
+    .dp-period-row {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      margin-bottom: 3px;
+    }
+    .dp-period-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #9ca3af;
+      width: 28px;
+      flex-shrink: 0;
+      text-align: right;
+      padding-right: 4px;
+    }
+    .dp-week-cell {
+      width: 36px;
+      height: 28px;
+      border: none;
+      background: #f9fafb;
+      border-radius: 4px;
+      font-size: 11px;
+      color: #374151;
+      cursor: pointer;
+      font-weight: 500;
+      font-family: inherit;
+      transition: background .1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+    .dp-week-cell:hover { background: #e5e7eb; color: #1f2937; }
+    .dp-week-cell.dp-cell-range {
+      background: #f3f4f6;
+      color: #374151;
+      border-radius: 2px;
+    }
+    .dp-week-cell.dp-cell-endpoint {
+      background: #1f2937;
+      color: white;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .dp-divider { width: 1px; background: #f3f4f6; margin: 0 8px; align-self: stretch; }
+    .dp-years {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      border-left: 0.5px solid #f3f4f6;
+      padding-left: 12px;
+      margin-left: 4px;
+    }
+    .dp-year-item {
+      font-size: 12px;
+      color: #6b7280;
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      text-align: center;
+      transition: background .1s;
+    }
+    .dp-year-item:hover { background: #f3f4f6; color: #1f2937; }
+    .dp-year-item.dp-year-selected {
+      background: #1f2937;
+      color: white;
+      font-weight: 600;
+      border-radius: 999px;
+    }
+    .dp-meta {
+      margin-top: .85rem;
+      padding-top: .75rem;
+      border-top: 0.5px solid #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .dp-checkbox-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dp-checkbox-wrap label { font-size: 12px; color: #6b7280; cursor: pointer; }
+    .dp-footer-btns {
+      display: flex;
+      gap: 8px;
+    }
+    .dp-footer-btns button { font-size: 12px; padding: 6px 14px; }
+
+    /* ── Filter strip ────────────────────────────────────── */
+    .filter-strip { margin-top: .75rem; display: none; }
+    .active-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #eff6ff; border: 0.5px solid #bfdbfe;
+      border-radius: 20px; padding: 3px 12px; font-size: 12px; color: #1d4ed8;
+    }
+
+    /* ── Donut legend ────────────────────────────────────── */
+    .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .legend-label { flex: 1; font-size: 13px; }
+    .legend-val   { font-size: 13px; font-weight: 600; }
+
+    /* ── Target pct bar ──────────────────────────────────── */
+    .pct-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+    .pct-bar  { height: 4px; border-radius: 2px; background: #6366f1; opacity: .45; }
+
+    /* ── Exploratory section ─────────────────────────────── */
+    .section-header {
+      display: flex; align-items: center; gap: 10px;
+      margin: 1.5rem 0 .75rem;
+      padding-bottom: .75rem;
+      border-bottom: 0.5px solid #e5e7eb;
+    }
+    .section-header h3 { font-size: 13px; font-weight: 600; margin: 0; color: #374151; }
+    .section-header p  { font-size: 12px; color: #9ca3af; margin: 0; }
+
+    /* ── Heatmap ─────────────────────────────────────────── */
+    .heatmap-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .heatmap-table th {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .04em; color: #6b7280;
+      padding: 0 8px 8px; text-align: center;
+      border-bottom: 0.5px solid #e5e7eb;
+    }
+    .heatmap-table th:first-child { text-align: left; padding-left: 0; width: 11%; }
+    .heatmap-table th:nth-child(2) { text-align: left; width: 28%; }
+    .heatmap-table th:last-child   { text-align: right; padding-right: 0; }
+
+    .heatmap-table td {
+      padding: 7px 8px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 12px;
+      border: 2px solid white;
+      transition: opacity .15s;
+    }
+    .heatmap-table td:first-child {
+      text-align: left;
+      font-weight: 400;
+      font-size: 11px;
+      font-family: 'SF Mono','Roboto Mono',monospace;
+      color: #9ca3af;
+      padding-left: 0;
+      background: transparent !important;
+      border: none;
+    }
+    .heatmap-table td:nth-child(2) {
+      text-align: left;
+      font-weight: 500;
+      color: #374151;
+      padding-left: 0;
+      background: transparent !important;
+      border: none;
+    }
+    .heatmap-table td.total-col {
+      text-align: right;
+      font-weight: 700;
+      color: #374151;
+      background: transparent !important;
+      border-left: 0.5px solid #e5e7eb;
+      border-right: none;
+      border-top: none;
+      border-bottom: none;
+      padding-right: 0;
+    }
+    .heatmap-table tbody tr:hover td:not(:first-child):not(:nth-child(2)):not(.total-col) {
+      outline: 2px solid rgba(59,130,246,.35);
+      outline-offset: -2px;
+    }
+
+    /* ── Product thumbnails ──────────────────────────────── */
+    .prod-thumb {
+      width: 28px; height: 28px; border-radius: 6px;
+      border: 0.5px solid rgba(0,0,0,.08);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 8px; font-weight: 700; letter-spacing: .03em;
+      flex-shrink: 0; user-select: none;
+    }
+    .prod-dr { background: #fde68a; color: #92400e; }
+    .prod-sb { background: #bbf7d0; color: #14532d; }
+    .prod-ch { background: #fecaca; color: #7f1d1d; }
+    .prod-pl { background: #bae6fd; color: #0c4a6e; }
+    .prod-ly { background: #e9d5ff; color: #4c1d95; }
+
+    /* ── Product cell (thumb + name) ─────────────────────── */
+    .product-cell {
+      display: flex; align-items: center; gap: 8px; min-width: 0;
+    }
+    .product-name {
+      line-height: 1.3; min-width: 0;
+      display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+      overflow: hidden;
+    }
+    .product-name-nowrap {
+      line-height: 1.3; min-width: 0; flex: 1;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    /* ── Heatmap legend ──────────────────────────────────── */
+    .heatmap-legend {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: .9rem;
+      padding-top: .75rem;
+      border-top: 0.5px solid #f3f4f6;
+    }
+    .hl-label { font-size: 11px; color: #9ca3af; }
+    .hl-swatch { width: 22px; height: 10px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div class="page">
+<div class="inner">
+
+  <!-- ═══ HEADER ══════════════════════════════════════════════ -->
+  <div class="header">
+    <div>
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:.3rem;">
+        <h1 style="font-size:21px; font-weight:600; margin:0; color:#1f2937;">Smart Node Reroute Dashboard</h1>
+        <span style="font-size:10px; font-weight:600; background:#f3f4f6; border:0.5px solid #d1d5db; color:#6b7280; padding:2px 8px; border-radius:10px; letter-spacing:.04em;">VERSION B</span>
+      </div>
+      <p style="font-size:13px; color:#6b7280; margin:0;">Monitor reroute volume, source DC performance, reasons, and product-level impact</p>
+    </div>
+    <div class="header-controls">
+
+      <!-- Date Range — custom period-week picker -->
+      <div class="ctrl-group">
+        <span class="ctrl-label">Date Range</span>
+        <button id="datePickerBtn" onclick="toggleDatePicker(event)">
+          <span id="datePickerLabel">P6W1 – P9W4, 2023</span>
+          <span class="dp-caret">▾</span>
+        </button>
+
+        <!-- Popover -->
+        <div class="date-picker-popover" id="datePicker">
+          <!-- Segmented control -->
+          <div class="dp-segments">
+            <button class="dp-seg" data-mode="period" onclick="dpSetMode('period')">Period</button>
+            <button class="dp-seg dp-seg-active" data-mode="week" onclick="dpSetMode('week')">Period Week</button>
+          </div>
+
+          <!-- Body: grids + years -->
+          <div class="dp-body">
+            <div class="dp-grids">
+              <div class="dp-grid-half" id="dpGridLeft"></div>
+              <div class="dp-grid-half" id="dpGridRight"></div>
+            </div>
+            <div class="dp-years" id="dpYears"></div>
+          </div>
+
+          <!-- Checkbox + action buttons -->
+          <div class="dp-meta">
+            <div class="dp-checkbox-wrap">
+              <input type="checkbox" id="dpWeekRangeCb">
+              <label for="dpWeekRangeCb">Select by week range</label>
+            </div>
+            <div class="dp-footer-btns">
+              <button onclick="dpCancel()">Cancel</button>
+              <button class="primary" onclick="dpApply()">Apply</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ctrl-group">
+        <span class="ctrl-label">Source DC</span>
+        <select id="sourceDC" onchange="globalFilter()">
+          <option value="all">All DCs</option>
+          <option value="grandprairie">Grand Prairie</option>
+          <option value="meadville">Meadville</option>
+          <option value="indy">Indy</option>
+          <option value="phoenix">Phoenix</option>
+          <option value="joliet">Joliet</option>
+        </select>
+      </div>
+      <button>Export</button>
+      <button class="primary">Refresh</button>
+    </div>
+  </div>
+
+  <div id="filterStrip" class="filter-strip">
+    <span class="active-pill">● <span id="filterPillText"></span></span>
+  </div>
+
+  <!-- ═══ KPI CARDS ═══════════════════════════════════════════ -->
+  <div class="kpi-grid" style="margin-top:.75rem;">
+    <div class="card">
+      <p class="kpi-label">Total Reroutes</p>
+      <p id="kpi-reroutes" class="kpi-val">69</p>
+      <p class="kpi-s1" style="color:#6b7280;">Based on selected filters</p>
+      <p class="kpi-s2">Lower is better</p>
+    </div>
+    <div class="card">
+      <p class="kpi-label">Avg Handling Time</p>
+      <p class="kpi-val">3.8<span> min</span></p>
+      <p class="kpi-s1" style="color:#10b981;">↓ 0.4 min vs last week</p>
+      <p class="kpi-s2" style="color:#6b7280;">Target: ≤5 min</p>
+    </div>
+    <div class="card">
+      <p class="kpi-label">Est. Net Time Saved</p>
+      <p id="kpi-saved" class="kpi-val">41.6<span> hrs</span></p>
+      <p class="kpi-s1" style="color:#6b7280;">vs 40 min manual baseline</p>
+      <p class="kpi-s2">reroutes × (40 min − avg handling time)</p>
+    </div>
+    <div class="card">
+      <p class="kpi-label">First-Pass Success</p>
+      <p class="kpi-val">93%</p>
+      <p class="kpi-s1" style="color:#f59e0b;">7% required rework</p>
+      <p class="kpi-s2" style="color:#6b7280;">Target: ≥95%</p>
+    </div>
+  </div>
+
+  <!-- ═══ OVERVIEW ROW: Chart (70%) + Reasons (30%) ═══════════ -->
+  <div class="row col-7">
+    <div class="card">
+      <h2 id="dcChartTitle" class="card-title">Reroutes by Source DC</h2>
+      <p id="dcChartSub" class="card-sub" style="margin-bottom:1rem;">Total reroutes by source distribution center for the selected period</p>
+      <div style="position:relative; width:100%; height:188px;">
+        <canvas id="dcChart"></canvas>
+      </div>
+    </div>
+    <div class="card" style="display:flex; flex-direction:column;">
+      <h2 class="card-title">Reroute Reasons</h2>
+      <p class="card-sub" style="margin-bottom:1rem;">Distribution across selected filters</p>
+      <div style="display:flex; align-items:center; gap:1.25rem; flex:1;">
+        <div style="position:relative; width:110px; height:110px; flex-shrink:0;">
+          <canvas id="reasonDonut"></canvas>
+          <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none;">
+            <span style="font-size:19px; font-weight:700; color:#1f2937;">69</span>
+            <span style="font-size:10px; color:#6b7280;">reroutes</span>
+          </div>
+        </div>
+        <div style="flex:1;">
+          <div class="legend-row" style="align-items:flex-start;">
+            <div class="legend-dot" style="background:#6366f1; margin-top:3px; flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="font-size:13px; color:#1f2937; font-weight:500; line-height:1.3;">Stale Items</div>
+              <div style="font-size:11px; color:#6b7280; margin-top:1px;">45% · 31 reroutes</div>
+            </div>
+          </div>
+          <div class="legend-row" style="align-items:flex-start;">
+            <div class="legend-dot" style="background:#a5b4fc; margin-top:3px; flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="font-size:13px; color:#1f2937; font-weight:500; line-height:1.3;">Inv. Discrepancy</div>
+              <div style="font-size:11px; color:#6b7280; margin-top:1px;">35% · 24 reroutes</div>
+            </div>
+          </div>
+          <div class="legend-row" style="margin-bottom:0; align-items:flex-start;">
+            <div class="legend-dot" style="background:#e0e7ff; margin-top:3px; flex-shrink:0;"></div>
+            <div style="flex:1;">
+              <div style="font-size:13px; color:#1f2937; font-weight:500; line-height:1.3;">Damaged Item</div>
+              <div style="font-size:11px; color:#6b7280; margin-top:1px;">20% · 14 reroutes</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SOURCE DC PERFORMANCE (expandable) ═══════════════════ -->
+  <div class="card" style="margin-bottom:12px; padding:1.25rem 1.5rem 1rem;">
+    <div style="margin-bottom:.75rem;">
+      <h2 id="perfCardTitle" class="card-title">Source DC Performance</h2>
+      <p id="perfCardSub" class="card-sub">Expand a source DC to view top affected products and reroute details.</p>
+    </div>
+    <!-- All-DCs expandable table -->
+    <div id="perfTableWrap">
+      <table class="tbl" id="perfTable" style="table-layout:fixed;">
+        <colgroup>
+          <col style="width:36px;">
+          <col style="width:17%;">
+          <col style="width:10%;">
+          <col style="width:20%;">
+          <col style="width:22%;">
+          <col style="width:18%;">
+        </colgroup>
+        <thead>
+          <tr>
+            <th></th>
+            <th style="padding-left:4px;">Source DC</th>
+            <th class="r" style="padding-right:8px;">Reroutes</th>
+            <th style="padding-left:12px;">Top Reason</th>
+            <th style="padding-left:12px;">Top Product</th>
+            <th style="padding-left:12px;">Top Destination</th>
+          </tr>
+        </thead>
+        <tbody id="perfTbody"></tbody>
+      </table>
+    </div>
+    <!-- Single-DC product detail view -->
+    <div id="perfSingleDCView" style="display:none;"></div>
+  </div>
+
+  <!-- ═══ EXPLORATORY SECTION ══════════════════════════════════ -->
+  <div class="section-header">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <h3>Exploratory Product-Level Analysis</h3>
+      <span class="pill pill-exploratory">Exploratory</span>
+    </div>
+    <p id="exploratorySectionSub" style="margin-left:auto; font-size:12px; color:#9ca3af;">
+      Optional Phase 1.5 concept to validate whether users need product-by-destination flow, including the Canceled bucket. Showing analysis across all source DCs.
+    </p>
+  </div>
+
+  <!-- ═══ DESTINATION ROW: Distribution (30%) + Heatmap (70%) ═══ -->
+  <div class="row" style="grid-template-columns: 3fr 7fr;">
+
+    <!-- Destination Distribution — aggregate view -->
+    <div class="card">
+      <h2 class="card-title">Destination Distribution</h2>
+      <p id="destSub" class="card-sub" style="margin-bottom:.75rem;">Where rerouted products are being sent or bucketed across selected filters.</p>
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Destination</th>
+            <th class="r">Qty</th>
+            <th class="r">%</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="font-weight:500;">Phoenix</td>   <td class="r" style="color:#6b7280;">22</td><td class="r"><div class="pct-wrap"><div class="pct-bar" style="width:38px;"></div><span style="font-weight:600; min-width:28px; text-align:right;">32%</span></div></td></tr>
+          <tr><td style="font-weight:500;">Meadville</td> <td class="r" style="color:#6b7280;">17</td><td class="r"><div class="pct-wrap"><div class="pct-bar" style="width:30px;"></div><span style="font-weight:600; min-width:28px; text-align:right;">25%</span></div></td></tr>
+          <tr><td style="font-weight:500;">Indy</td>      <td class="r" style="color:#6b7280;">14</td><td class="r"><div class="pct-wrap"><div class="pct-bar" style="width:24px;"></div><span style="font-weight:600; min-width:28px; text-align:right;">20%</span></div></td></tr>
+          <tr><td style="font-weight:500;">Joliet</td>    <td class="r" style="color:#6b7280;">10</td><td class="r"><div class="pct-wrap"><div class="pct-bar" style="width:17px;"></div><span style="font-weight:600; min-width:28px; text-align:right;">14%</span></div></td></tr>
+          <tr><td style="font-weight:500; color:#6b7280;">Canceled</td><td class="r" style="color:#6b7280;">6</td><td class="r"><div class="pct-wrap"><div class="pct-bar" style="width:11px; opacity:.3;"></div><span style="color:#6b7280; min-width:28px; text-align:right;">9%</span></div></td></tr>
+        </tbody>
+      </table>
+      <div class="tbl-footer"><span>4 DCs + Canceled bucket</span><span>Total: <strong style="color:#1f2937;">69</strong></span></div>
+      <p style="margin-top:.55rem; font-size:10px; color:#9ca3af; font-style:italic; line-height:1.4;">Canceled is shown as a destination bucket for validation. Confirm with Sarah whether this should be treated as a status, destination, or separate outcome.</p>
+    </div>
+
+    <!-- Product × Destination Heatmap — product-level view -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:.75rem; flex-wrap:wrap; gap:.25rem;">
+        <div>
+          <h2 class="card-title">Product × Destination Heatmap</h2>
+          <p id="heatmapSub" class="card-sub">Shows which products are being routed to target DCs or ending in the Canceled bucket.</p>
+        </div>
+        <span style="font-size:11px; color:#9ca3af; white-space:nowrap;">Darker cells indicate higher product quantity.</span>
+      </div>
+      <table class="heatmap-table" id="heatmapTable">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Product</th>
+            <th>Meadville</th>
+            <th>Phoenix</th>
+            <th>Indy</th>
+            <th>Joliet</th>
+            <th>Canceled</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="heatmapBody"></tbody>
+      </table>
+      <!-- Legend -->
+      <div class="heatmap-legend">
+        <span class="hl-label">Lower quantity</span>
+        <div class="hl-swatch" style="background: rgb(239,246,255); border: 0.5px solid #e5e7eb;"></div>
+        <div class="hl-swatch" style="background: rgb(166,195,245);"></div>
+        <div class="hl-swatch" style="background: rgb(93,144,234);"></div>
+        <div class="hl-swatch" style="background: rgb(29,78,216);"></div>
+        <span class="hl-label">Higher quantity</span>
+      </div>
+    </div>
+
+  </div><!-- /destination row -->
+
+</div><!-- /inner -->
+</div><!-- /page -->
+
+<script>
+// ──────────────────────────────────────────────────────────────
+// STATIC DATA
+// ──────────────────────────────────────────────────────────────
+
+const DC_ROWS = [
+  { key:'grandprairie', name:'Grand Prairie', reroutes:18, reason:'Stale Items',           topSku:'SKU-1045', product:"Doritos Tortilla Chips Ultimate Garlic Parm Flavored, 9 1/4 Oz",        target:'Phoenix'   },
+  { key:'meadville',    name:'Meadville',     reroutes:16, reason:'Inventory Discrepancy', topSku:'SKU-2031', product:'STARBUCKS COLD BREW 11 OZ SLEEK CAN 12 PACK VANILLA SWEET CREAM ECOM', target:'Indy'      },
+  { key:'indy',         name:'Indy',          reroutes:14, reason:'Stale Items',           topSku:'SKU-8842', product:"Cheetos Crunchy Flamin' Hot Limon, 8.5oz",                             target:'Joliet'    },
+  { key:'phoenix',      name:'Phoenix',       reroutes:12, reason:'Damaged Item',          topSku:'SKU-4421', product:'LIPTON PURELEAF ICED TEA UNSWEET WITH LEMON 18.5Z PLASTIC BOT 12PK BOX', target:'Meadville' },
+  { key:'joliet',       name:'Joliet',        reroutes:9,  reason:'Inventory Discrepancy', topSku:'SKU-7708', product:"Lay's Cheddar Jalapeno Party Size, 12.5 Ounce",                        target:'Canceled'  }
+];
+
+const EXPANDED_DATA = {
+  grandprairie: [
+    { caOrder:'20034585', siteOrder:'20034585', sku:'SKU-1045', desc:"Doritos Tortilla Chips Ultimate Garlic Parm Flavored, 9 1/4 Oz",        qty:12, target:'Phoenix',       reason:'Stale Items'           },
+    { caOrder:'88483200', siteOrder:'88483200', sku:'SKU-7708', desc:"Lay's Cheddar Jalapeno Party Size, 12.5 Ounce",                         qty:8,  target:'Phoenix',       reason:'Inventory Discrepancy' },
+    { caOrder:'83203495', siteOrder:'83203495', sku:'SKU-8842', desc:"Cheetos Crunchy Flamin' Hot Limon, 8.5oz",                              qty:7,  target:'Meadville',     reason:'Stale Items'           },
+    { caOrder:'74929700', siteOrder:'74929700', sku:'SKU-4421', desc:'LIPTON PURELEAF ICED TEA UNSWEET WITH LEMON 18.5Z PLASTIC BOT 12PK BOX', qty:5,  target:'Canceled',      reason:'Damaged Item'          },
+    { caOrder:'93888232', siteOrder:'93888232', sku:'SKU-2031', desc:'STARBUCKS COLD BREW 11 OZ SLEEK CAN 12 PACK VANILLA SWEET CREAM ECOM',  qty:4,  target:'Joliet',        reason:'Inventory Discrepancy' }
+  ],
+  meadville: [
+    { caOrder:'30128441', siteOrder:'30128441', sku:'SKU-2031', desc:'STARBUCKS COLD BREW 11 OZ SLEEK CAN 12 PACK VANILLA SWEET CREAM ECOM',  qty:9,  target:'Indy',          reason:'Inventory Discrepancy' },
+    { caOrder:'30029183', siteOrder:'30029183', sku:'SKU-1045', desc:"Doritos Tortilla Chips Ultimate Garlic Parm Flavored, 9 1/4 Oz",        qty:7,  target:'Phoenix',       reason:'Stale Items'           },
+    { caOrder:'30193847', siteOrder:'30193847', sku:'SKU-7708', desc:"Lay's Cheddar Jalapeno Party Size, 12.5 Ounce",                         qty:4,  target:'Grand Prairie', reason:'Inventory Discrepancy' },
+    { caOrder:'30449021', siteOrder:'30449021', sku:'SKU-8842', desc:"Cheetos Crunchy Flamin' Hot Limon, 8.5oz",                              qty:3,  target:'Joliet',        reason:'Stale Items'           },
+    { caOrder:'30920011', siteOrder:'30920011', sku:'SKU-4421', desc:'LIPTON PURELEAF ICED TEA UNSWEET WITH LEMON 18.5Z PLASTIC BOT 12PK BOX', qty:2,  target:'Phoenix',       reason:'Damaged Item'          }
+  ],
+  indy: [
+    { caOrder:'40028432', siteOrder:'40028432', sku:'SKU-8842', desc:"Cheetos Crunchy Flamin' Hot Limon, 8.5oz",                              qty:7,  target:'Joliet',        reason:'Stale Items'           },
+    { caOrder:'40193920', siteOrder:'40193920', sku:'SKU-2031', desc:'STARBUCKS COLD BREW 11 OZ SLEEK CAN 12 PACK VANILLA SWEET CREAM ECOM',  qty:4,  target:'Phoenix',       reason:'Inventory Discrepancy' },
+    { caOrder:'40398100', siteOrder:'40398100', sku:'SKU-1045', desc:"Doritos Tortilla Chips Ultimate Garlic Parm Flavored, 9 1/4 Oz",        qty:3,  target:'Meadville',     reason:'Stale Items'           },
+    { caOrder:'40519232', siteOrder:'40519232', sku:'SKU-7708', desc:"Lay's Cheddar Jalapeno Party Size, 12.5 Ounce",                         qty:2,  target:'Grand Prairie', reason:'Inventory Discrepancy' },
+    { caOrder:'40988001', siteOrder:'40988001', sku:'SKU-4421', desc:'LIPTON PURELEAF ICED TEA UNSWEET WITH LEMON 18.5Z PLASTIC BOT 12PK BOX', qty:1,  target:'Joliet',        reason:'Damaged Item'          }
+  ],
+  phoenix: [
+    { caOrder:'50021983', siteOrder:'50021983', sku:'SKU-4421', desc:'LIPTON PURELEAF ICED TEA UNSWEET WITH LEMON 18.5Z PLASTIC BOT 12PK BOX', qty:5,  target:'Meadville',     reason:'Damaged Item'          },
+    { caOrder:'50129204', siteOrder:'50129204', sku:'SKU-1045', desc:"Doritos Tortilla Chips Ultimate Garlic Parm Flavored, 9 1/4 Oz",        qty:4,  target:'Indy',          reason:'Stale Items'           },
+    { caOrder:'50203841', siteOrder:'50203841', sku:'SKU-2031', desc:'STARBUCKS COLD BREW 11 OZ SLEEK CAN 12 PACK VANILLA SWEET CREAM ECOM',  qty:3,  target:'Grand Prairie', reason:'Inventory Discrepancy' },
+    { caOrder:'50391020', siteOrder:'50391020', sku:'SKU-8842', desc:"Cheetos Crunchy Flamin' Hot Limon, 8.5oz",                              qty:2,  target:'Joliet',        reason:'Stale Items'           },
+    { caOrder:'50484923', siteOrder:'50484923', sku:'SKU-7708', desc:"Lay's Cheddar Jalapeno Party Size, 12.5 Ounce",                         qty:2,  target:'Meadville',     reason:'Inventory Discrepancy' }
+  ],
+  joliet: [
+    { caOrder:'60019283', siteOrder:'60019283', sku:'SKU-7708', desc:"Lay's Cheddar Jalapeno Party Size, 12.5 Ounce",                         qty:4,  target:'Canceled',      reason:'Inventory Discrepancy' },
+    { caOrder:'60102948', siteOrder:'60102948', sku:'SKU-8842', desc:"Cheetos Crunchy Flamin' Hot Limon, 8.5oz",                              qty:3,  target:'Canceled',      reason:'Stale Items'           },
+    { caOrder:'60294850', siteOrder:'60294850', sku:'SKU-2031', desc:'STARBUCKS COLD BREW 11 OZ SLEEK CAN 12 PACK VANILLA SWEET CREAM ECOM',  qty:2,  target:'Meadville',     reason:'Inventory Discrepancy' },
+    { caOrder:'60399128', siteOrder:'60399128', sku:'SKU-4421', desc:'LIPTON PURELEAF ICED TEA UNSWEET WITH LEMON 18.5Z PLASTIC BOT 12PK BOX', qty:1,  target:'Grand Prairie', reason:'Damaged Item'          },
+    { caOrder:'60490012', siteOrder:'60490012', sku:'SKU-1045', desc:"Doritos Tortilla Chips Ultimate Garlic Parm Flavored, 9 1/4 Oz",        qty:1,  target:'Phoenix',       reason:'Stale Items'           }
+  ]
+};
+
+// Neutral pill for all reason types
+function makePill(text) {
+  return `<span class="pill">${text}</span>`;
+}
+
+const PILL = {
+  'Stale Items':           makePill('Stale Items'),
+  'Inventory Discrepancy': makePill('Inv. Discrepancy'),
+  'Damaged Item':          makePill('Damaged Item')
+};
+
+// Product metadata: thumbnail class + initials per SKU
+const PRODUCT_META = {
+  'SKU-1045': { cls:'prod-dr', init:'DR' },
+  'SKU-2031': { cls:'prod-sb', init:'SB' },
+  'SKU-8842': { cls:'prod-ch', init:'CH' },
+  'SKU-4421': { cls:'prod-pl', init:'PL' },
+  'SKU-7708': { cls:'prod-ly', init:'LY' },
+};
+
+// Render a product cell: thumbnail + name (wrapping, max 2 lines)
+function prodCell(sku, name) {
+  const m = PRODUCT_META[sku] || { cls:'', init:'?' };
+  return `<div class="product-cell">
+    <span class="prod-thumb ${m.cls}">${m.init}</span>
+    <span class="product-name">${name}</span>
+  </div>`;
+}
+
+// Render a product cell with truncated (no-wrap) name — for narrow columns
+function prodCellNarrow(sku, name) {
+  const m = PRODUCT_META[sku] || { cls:'', init:'?' };
+  return `<div class="product-cell">
+    <span class="prod-thumb ${m.cls}">${m.init}</span>
+    <span class="product-name-nowrap" title="${name}">${name}</span>
+  </div>`;
+}
+
+// ──────────────────────────────────────────────────────────────
+// HEATMAP DATA & RENDERING
+// ──────────────────────────────────────────────────────────────
+
+// vals order: Meadville, Phoenix, Indy, Joliet, Canceled
+const HEATMAP_ROWS = [
+  { sku:'SKU-1045', name:"Doritos Tortilla Chips Ultimate Garlic Parm Flavored, 9 1/4 Oz",        vals:[6, 18, 10, 4, 4] },
+  { sku:'SKU-2031', name:'STARBUCKS COLD BREW 11 OZ SLEEK CAN 12 PACK VANILLA SWEET CREAM ECOM', vals:[14, 7,  5, 6, 4] },
+  { sku:'SKU-8842', name:"Cheetos Crunchy Flamin' Hot Limon, 8.5oz",                              vals:[3, 11, 10, 2, 2] },
+  { sku:'SKU-4421', name:'LIPTON PURELEAF ICED TEA UNSWEET WITH LEMON 18.5Z PLASTIC BOT 12PK BOX', vals:[5,  2,  4, 6, 4] },
+  { sku:'SKU-7708', name:"Lay's Cheddar Jalapeno Party Size, 12.5 Ounce",                         vals:[2,  8,  5, 2, 1] }
+];
+
+const HM_MAX = Math.max(...HEATMAP_ROWS.flatMap(r => r.vals)); // 18
+
+// Blue sequential scale: eff6ff (blue-50) → 1d4ed8 (blue-700)
+function hmColor(val) {
+  if (val === 0) return '#f9fafb';
+  const t = val / HM_MAX;
+  const rLow=239, gLow=246, bLow=255;
+  const rHigh=29,  gHigh=78,  bHigh=216;
+  const r = Math.round(rLow + t * (rHigh - rLow));
+  const g = Math.round(gLow + t * (gHigh - gLow));
+  const b = Math.round(bLow + t * (bHigh - bLow));
+  return `rgb(${r},${g},${b})`;
+}
+
+function hmTextColor(val) {
+  const t = val / HM_MAX;
+  if (t > 0.58) return '#ffffff';
+  if (t > 0.28) return '#1e3a8a';
+  return '#374151';
+}
+
+function buildHeatmap() {
+  const tbody = document.getElementById('heatmapBody');
+  tbody.innerHTML = HEATMAP_ROWS.map(row => {
+    const total = row.vals.reduce((a,b) => a+b, 0);
+    const cells = row.vals.map(v => {
+      const bg  = hmColor(v);
+      const txt = hmTextColor(v);
+      return `<td style="background:${bg}; color:${txt};">${v}</td>`;
+    }).join('');
+    return `
+      <tr>
+        <td class="mono">${row.sku}</td>
+        <td>${prodCell(row.sku, row.name)}</td>
+        ${cells}
+        <td class="total-col">${total}</td>
+      </tr>`;
+  }).join('');
+}
+
+// ──────────────────────────────────────────────────────────────
+// CHARTS
+// ──────────────────────────────────────────────────────────────
+
+// Sample daily trend data (Mon–Sun) used when a specific DC is selected
+const DAILY_TREND = { labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], data: [3,2,4,3,4,1,1] };
+
+let dcChart = null;
+
+function buildSourceDCChart() {
+  if (dcChart) { dcChart.destroy(); dcChart = null; }
+  const ctx = document.getElementById('dcChart').getContext('2d');
+  dcChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: DC_ROWS.map(d => d.name),
+      datasets: [{
+        data: DC_ROWS.map(d => d.reroutes),
+        backgroundColor: 'rgba(99,102,241,0.14)',
+        borderColor: '#6366f1',
+        borderWidth: 1.5,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display:false },
+        tooltip: { callbacks: { label: c => ` ${c.parsed.x} reroutes` } }
+      },
+      scales: {
+        x: { beginAtZero:true, ticks:{ font:{size:11}, color:'#9ca3af', stepSize:1 }, grid:{ color:'#f3f4f6', drawBorder:false } },
+        y: { ticks:{ font:{size:12}, color:'#374151' }, grid:{ display:false } }
+      }
+    }
+  });
+}
+
+function buildTrendChart(dcName) {
+  if (dcChart) { dcChart.destroy(); dcChart = null; }
+  const ctx = document.getElementById('dcChart').getContext('2d');
+  dcChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: DAILY_TREND.labels,
+      datasets: [{
+        data: DAILY_TREND.data,
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99,102,241,0.08)',
+        borderWidth: 2,
+        pointRadius: 4,
+        pointBackgroundColor: '#6366f1',
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display:false },
+        tooltip: { callbacks: { label: c => ` ${c.parsed.y} reroutes` } }
+      },
+      scales: {
+        x: { ticks:{ font:{size:11}, color:'#9ca3af' }, grid:{ color:'#f3f4f6', drawBorder:false } },
+        y: { beginAtZero:true, ticks:{ font:{size:11}, color:'#9ca3af', stepSize:1 }, grid:{ color:'#f3f4f6', drawBorder:false } }
+      }
+    }
+  });
+}
+
+function switchChart(dcKey) {
+  const titleEl = document.getElementById('dcChartTitle');
+  const subEl   = document.getElementById('dcChartSub');
+  if (!dcKey || dcKey === 'all') {
+    titleEl.textContent = 'Reroutes by Source DC';
+    subEl.textContent   = 'Total reroutes by source distribution center for the selected period';
+    buildSourceDCChart();
+  } else {
+    const dc = DC_ROWS.find(d => d.key === dcKey);
+    titleEl.textContent = `Reroutes from ${dc.name} over selected period`;
+    subEl.textContent   = 'Daily reroute volume for the selected Source DC.';
+    buildTrendChart(dc.name);
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// SINGLE-DC STANDALONE VIEW
+// ──────────────────────────────────────────────────────────────
+
+function buildSingleDCView(dcKey) {
+  const dc = DC_ROWS.find(d => d.key === dcKey);
+  const orders = EXPANDED_DATA[dcKey] || [];
+  const container = document.getElementById('perfSingleDCView');
+  container.innerHTML = `
+    <table class="dc-detail-tbl">
+      <colgroup>
+        <col style="width:12%;">
+        <col style="width:12%;">
+        <col style="width:13%;">
+        <col style="width:34%;">
+        <col style="width:10%;">
+        <col style="width:10%;">
+        <col style="width:9%;">
+      </colgroup>
+      <thead>
+        <tr>
+          <th>CA Order ID</th>
+          <th>Site Order ID</th>
+          <th>SKU</th>
+          <th>Description</th>
+          <th class="r">Qty Rerouted</th>
+          <th style="padding-left:10px;">Destination</th>
+          <th style="padding-left:10px;">Reason</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${orders.map(o => `
+          <tr>
+            <td class="mono">${o.caOrder}</td>
+            <td class="mono">${o.siteOrder}</td>
+            <td class="mono">${o.sku}</td>
+            <td>${prodCell(o.sku, o.desc)}</td>
+            <td class="r" style="color:#6b7280; font-weight:600;">${o.qty}</td>
+            <td style="padding-left:10px; color:#374151;">${o.target}</td>
+            <td style="padding-left:10px;">${PILL[o.reason] || o.reason}</td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+    <div style="display:flex; justify-content:space-between; border-top:0.5px solid #e5e7eb; margin-top:.75rem; padding-top:.75rem; font-size:12px; color:#6b7280;">
+      <span>${orders.length} order lines</span>
+      <span>Total qty rerouted: <strong style="color:#1f2937;">${orders.reduce((s,o) => s+o.qty, 0)}</strong></span>
+    </div>`;
+}
+
+const rCtx = document.getElementById('reasonDonut').getContext('2d');
+new Chart(rCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['Stale Items','Inventory Discrepancy','Damaged Item'],
+    datasets: [{
+      data: [45,35,20],
+      backgroundColor: ['#6366f1','#a5b4fc','#e0e7ff'],
+      borderWidth: 0,
+      hoverOffset: 4
+    }]
+  },
+  options: {
+    cutout: '68%',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display:false },
+      tooltip: { callbacks: { label: c => ` ${c.label}: ${c.parsed}%` } }
+    }
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// SOURCE DC PERFORMANCE TABLE
+// ──────────────────────────────────────────────────────────────
+
+const SVG_CHEVRON_RIGHT = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><polyline points="9 18 15 12 9 6"/></svg>`;
+const SVG_CHEVRON_DOWN  = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><polyline points="6 9 12 15 18 9"/></svg>`;
+
+let expandedKey = null;
+
+function buildPerfTable() {
+  const tbody = document.getElementById('perfTbody');
+  tbody.innerHTML = '';
+
+  DC_ROWS.forEach(dc => {
+    const isOpen = expandedKey === dc.key;
+
+    const tr = document.createElement('tr');
+    tr.className = 'dc-row' + (isOpen ? ' expanded' : '');
+    tr.setAttribute('data-dc', dc.key);
+    tr.onclick = () => toggleRow(dc.key);
+
+    tr.innerHTML = `
+      <td class="caret-cell">${isOpen ? SVG_CHEVRON_DOWN : SVG_CHEVRON_RIGHT}</td>
+      <td style="font-weight:500; color:#1f2937; padding-left:4px;">${dc.name}</td>
+      <td class="r" style="color:#6b7280; padding-right:8px;">${dc.reroutes}</td>
+      <td style="padding-left:12px;">${PILL[dc.reason] || dc.reason}</td>
+      <td style="padding-left:8px;">${prodCellNarrow(dc.topSku, dc.product)}</td>
+      <td style="padding-left:12px; color:#374151;">${dc.target}</td>
+    `;
+    tbody.appendChild(tr);
+
+    if (isOpen) {
+      const expandTr = document.createElement('tr');
+      expandTr.className = 'expand-row';
+      const orders = EXPANDED_DATA[dc.key] || [];
+      expandTr.innerHTML = `
+        <td colspan="6" style="padding:0;">
+          <div class="expand-panel">
+            <p class="expand-panel-title">Top affected products from ${dc.name}</p>
+            <table class="inner-tbl" style="table-layout:fixed;">
+              <colgroup>
+                <col style="width:12%;">
+                <col style="width:12%;">
+                <col style="width:13%;">
+                <col style="width:34%;">
+                <col style="width:10%;">
+                <col style="width:10%;">
+                <col style="width:9%;">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>CA Order ID</th>
+                  <th>Site Order ID</th>
+                  <th>SKU</th>
+                  <th>Description</th>
+                  <th class="r">Qty Rerouted</th>
+                  <th style="padding-left:10px;">Destination</th>
+                  <th style="padding-left:10px;">Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${orders.map(o => `
+                  <tr>
+                    <td class="mono">${o.caOrder}</td>
+                    <td class="mono">${o.siteOrder}</td>
+                    <td class="mono">${o.sku}</td>
+                    <td>${prodCell(o.sku, o.desc)}</td>
+                    <td class="r" style="color:#6b7280; font-weight:600;">${o.qty}</td>
+                    <td style="padding-left:10px;">${o.target}</td>
+                    <td style="padding-left:10px;">${PILL[o.reason] || o.reason}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </td>`;
+      tbody.appendChild(expandTr);
+    }
+
+    const sep = document.createElement('tr');
+    sep.className = 'sep';
+    sep.innerHTML = '<td colspan="6"></td>';
+    tbody.appendChild(sep);
+  });
+}
+
+function updateExploratorySubs(dcName) {
+  const all = !dcName;
+  document.getElementById('exploratorySectionSub').textContent = all
+    ? 'Optional Phase 1.5 concept to validate whether users need product-by-destination flow, including the Canceled bucket. Showing analysis across all source DCs.'
+    : `Optional Phase 1.5 concept to validate whether users need product-by-destination flow, including the Canceled bucket. Showing exploratory analysis for ${dcName}.`;
+
+  document.getElementById('heatmapSub').textContent = all
+    ? 'Shows which products are being routed to target DCs or ending in the Canceled bucket.'
+    : `Product destinations from ${dcName}, including target DCs and the Canceled bucket.`;
+}
+
+function toggleRow(key) {
+  expandedKey = expandedKey === key ? null : key;
+  buildPerfTable();
+
+  const dc = expandedKey ? DC_ROWS.find(d => d.key === expandedKey) : null;
+  const dcName = dc ? dc.name : null;
+
+  document.getElementById('destSub').textContent = dcName
+    ? `Where rerouted products from ${dcName} are being sent or bucketed.`
+    : 'Where rerouted products are being sent or bucketed across selected filters.';
+
+  updateExploratorySubs(dcName);
+}
+
+// ──────────────────────────────────────────────────────────────
+// GLOBAL FILTER
+// ──────────────────────────────────────────────────────────────
+
+function globalFilter() {
+  const dc = document.getElementById('sourceDC').value;
+  const rangeLabel = document.getElementById('datePickerLabel').textContent;
+  const strip = document.getElementById('filterStrip');
+
+  if (dc === 'all') {
+    strip.style.display = 'none';
+    expandedKey = null;
+    document.getElementById('kpi-reroutes').textContent = '69';
+    document.getElementById('kpi-saved').innerHTML = '41.6<span> hrs</span>';
+    document.getElementById('destSub').textContent = 'Where rerouted products are being sent or bucketed across selected filters.';
+    document.getElementById('perfCardTitle').textContent = 'Source DC Performance';
+    document.getElementById('perfCardSub').textContent   = 'Expand a source DC to view top affected products and reroute details.';
+    document.getElementById('perfTableWrap').style.display = '';
+    document.getElementById('perfSingleDCView').style.display = 'none';
+    updateExploratorySubs(null);
+    switchChart('all');
+  } else {
+    strip.style.display = 'block';
+    const dcMeta = DC_ROWS.find(d => d.key === dc);
+    document.getElementById('filterPillText').textContent = `Filtered: ${dcMeta?.name} · ${rangeLabel}`;
+    expandedKey = null; // single-DC view doesn't use expandable rows
+
+    if (dcMeta) {
+      const r = dcMeta.reroutes;
+      document.getElementById('kpi-reroutes').textContent = r;
+      document.getElementById('kpi-saved').innerHTML = `${(r * 36.2 / 60).toFixed(1)}<span> hrs</span>`;
+      document.getElementById('destSub').textContent = `Where rerouted products from ${dcMeta.name} are being sent or bucketed.`;
+      document.getElementById('perfCardTitle').textContent = `Top affected products from ${dcMeta.name}`;
+      document.getElementById('perfCardSub').textContent   = `Product/order lines rerouted from ${dcMeta.name} during the selected period.`;
+      document.getElementById('perfTableWrap').style.display = 'none';
+      document.getElementById('perfSingleDCView').style.display = '';
+      buildSingleDCView(dc);
+      updateExploratorySubs(dcMeta.name);
+      switchChart(dc);
+    }
+  }
+
+  buildPerfTable();
+}
+
+// ──────────────────────────────────────────────────────────────
+// DATE PICKER
+// ──────────────────────────────────────────────────────────────
+
+const DP = {
+  mode: 'week',
+  year: 2023,
+  startP: 6, startW: 1,
+  endP: 9,   endW: 4,
+  pendingStart: { p:6, w:1 },
+  pendingEnd:   { p:9, w:4 },
+  pendingYear:  2023,
+  selecting: 'start'
+};
+
+const YEARS = [2019, 2020, 2021, 2022, 2023, 2024];
+
+function toggleDatePicker(e) {
+  e.stopPropagation();
+  const el = document.getElementById('datePicker');
+  if (el.style.display === 'block') {
+    el.style.display = 'none';
+  } else {
+    // Reset pending to committed state
+    DP.pendingStart = { p: DP.startP, w: DP.startW };
+    DP.pendingEnd   = { p: DP.endP,   w: DP.endW   };
+    DP.pendingYear  = DP.year;
+    DP.selecting = 'start';
+    renderDatePicker();
+    el.style.display = 'block';
+  }
+}
+
+function dpCancel() {
+  document.getElementById('datePicker').style.display = 'none';
+}
+
+function dpApply() {
+  DP.startP = DP.pendingStart.p;
+  DP.startW = DP.pendingStart.w;
+  DP.endP   = DP.pendingEnd   ? DP.pendingEnd.p   : DP.pendingStart.p;
+  DP.endW   = DP.pendingEnd   ? DP.pendingEnd.w   : DP.pendingStart.w;
+  DP.year   = DP.pendingYear;
+
+  const label = `P${DP.startP}W${DP.startW} – P${DP.endP}W${DP.endW}, ${DP.year}`;
+  document.getElementById('datePickerLabel').textContent = label;
+  document.getElementById('datePicker').style.display = 'none';
+}
+
+function dpSetMode(mode) {
+  DP.mode = mode;
+  // Reset selecting state when switching modes
+  DP.selecting = 'start';
+  if (mode === 'period') {
+    DP.pendingStart = { p: DP.startP, w: 1 };
+    DP.pendingEnd   = { p: DP.endP,   w: 4 };
+  }
+  renderDatePicker();
+}
+
+function dpSelectYear(y) {
+  DP.pendingYear = y;
+  renderDatePicker();
+}
+
+function dpComparePW(a, b) {
+  if (!a || !b) return 0;
+  if (a.p !== b.p) return a.p - b.p;
+  return a.w - b.w;
+}
+
+function dpIsInRange(p, w) {
+  const s = DP.pendingStart, e = DP.pendingEnd;
+  if (!s || !e) return false;
+  const pos = {p, w};
+  return dpComparePW(pos, s) > 0 && dpComparePW(pos, e) < 0;
+}
+
+function dpIsStart(p, w) { const s = DP.pendingStart; return s && s.p===p && s.w===w; }
+function dpIsEnd(p, w)   { const e = DP.pendingEnd;   return e && e.p===p && e.w===w; }
+
+function dpClickCell(p, w) {
+  if (DP.selecting === 'start') {
+    DP.pendingStart = {p, w};
+    DP.pendingEnd   = null;
+    DP.selecting = 'end';
+  } else {
+    const clicked = {p, w};
+    if (dpComparePW(clicked, DP.pendingStart) < 0) {
+      DP.pendingEnd   = { ...DP.pendingStart };
+      DP.pendingStart = clicked;
+    } else {
+      DP.pendingEnd = clicked;
+    }
+    DP.selecting = 'start';
+  }
+  renderDatePicker();
+}
+
+function dpClickPeriod(p) {
+  if (DP.selecting === 'start') {
+    DP.pendingStart = {p, w:1};
+    DP.pendingEnd   = null;
+    DP.selecting = 'end';
+  } else {
+    if (p < DP.pendingStart.p) {
+      DP.pendingEnd   = { p: DP.pendingStart.p, w: 4 };
+      DP.pendingStart = { p, w: 1 };
+    } else {
+      DP.pendingEnd = { p, w: 4 };
+    }
+    DP.selecting = 'start';
+  }
+  renderDatePicker();
+}
+
+function renderDatePicker() {
+  // ── Segment buttons ──
+  document.querySelectorAll('.dp-seg').forEach(el => {
+    el.classList.toggle('dp-seg-active', el.dataset.mode === DP.mode);
+  });
+
+  // ── Year list ──
+  const yEl = document.getElementById('dpYears');
+  yEl.innerHTML = YEARS.map(y => `
+    <button class="dp-year-item${y === DP.pendingYear ? ' dp-year-selected' : ''}"
+            onclick="dpSelectYear(${y})">${y}</button>
+  `).join('');
+
+  const leftEl  = document.getElementById('dpGridLeft');
+  const rightEl = document.getElementById('dpGridRight');
+
+  if (DP.mode === 'week') {
+    // ── Period-week grid ──
+    function renderHalf(periods) {
+      return periods.map(p => {
+        const weeks = [1,2,3,4].map(w => {
+          let cls = 'dp-week-cell';
+          if (dpIsStart(p,w) || dpIsEnd(p,w)) cls += ' dp-cell-endpoint';
+          else if (dpIsInRange(p,w)) cls += ' dp-cell-range';
+          return `<button class="${cls}" onclick="dpClickCell(${p},${w})">W${w}</button>`;
+        }).join('');
+        return `<div class="dp-period-row"><span class="dp-period-label">P${p}</span>${weeks}</div>`;
+      }).join('');
+    }
+    leftEl.innerHTML  = renderHalf([1,2,3,4,5,6]);
+    rightEl.innerHTML = renderHalf([7,8,9,10,11,12]);
+    rightEl.style.display = '';
+
+  } else {
+    // ── Period-only grid ──
+    const periods = [1,2,3,4,5,6,7,8,9,10,11,12];
+    leftEl.innerHTML = periods.map(p => {
+      const s = DP.pendingStart, e = DP.pendingEnd;
+      const isS = s && s.p === p;
+      const isE = e && e.p === p;
+      const inR = s && e && p > s.p && p < e.p;
+      let cls = 'dp-week-cell';
+      if (isS || isE) cls += ' dp-cell-endpoint';
+      else if (inR) cls += ' dp-cell-range';
+      return `<button class="${cls}" style="width:48px; margin:2px;" onclick="dpClickPeriod(${p})">P${p}</button>`;
+    }).join('');
+    rightEl.innerHTML = '';
+    rightEl.style.display = 'none';
+  }
+}
+
+// Close picker on outside click
+document.addEventListener('click', function(e) {
+  const picker = document.getElementById('datePicker');
+  const btn    = document.getElementById('datePickerBtn');
+  if (picker.style.display === 'block' && !picker.contains(e.target) && !btn.contains(e.target)) {
+    picker.style.display = 'none';
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// INIT
+// ──────────────────────────────────────────────────────────────
+switchChart('all');
+buildPerfTable();
+buildHeatmap();
+</script>
+</body>
+</html>

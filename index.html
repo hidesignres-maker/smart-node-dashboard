@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNS_OMO — Reroute Metrics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        neutral: {
+                            50:  '#fafaf9',
+                            100: '#f5f5f4',
+                            200: '#e7e5e4',
+                            300: '#d6d3d1',
+                            400: '#a8a29e',
+                            500: '#78716c',
+                            600: '#57534e',
+                            700: '#44403c',
+                            800: '#292524',
+                            900: '#1c1917',
+                        },
+                        primary: {
+                            50:  '#D5F2FE',
+                            100: '#BAEAFF',
+                            500: '#0597F2',
+                            600: '#0484D4',
+                            700: '#03629E',
+                        },
+                        success: {
+                            50:  '#F0FDF4',
+                            500: '#22C55E',
+                            700: '#15803D',
+                        },
+                        warning: {
+                            50:  '#FFFBEB',
+                            500: '#F59E0B',
+                            700: '#B45309',
+                        },
+                        error: {
+                            50:  '#FEF2F2',
+                            500: '#CF1322',
+                            700: '#B91C1C',
+                        },
+                    },
+                    fontFamily: {
+                        sans:      ['Roboto', 'sans-serif'],
+                        mono:      ['"Roboto Mono"', 'monospace'],
+                        condensed: ['"Roboto Condensed"', 'sans-serif'],
+                    },
+                    borderRadius: {
+                        base: '4px',
+                        lg:   '8px',
+                    },
+                    spacing: {
+                        xxs:  '4px',
+                        xs:   '8px',
+                        sm:   '12px',
+                        base: '16px',
+                        md:   '20px',
+                        lg:   '24px',
+                        xl:   '32px',
+                        xxl:  '48px',
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Roboto', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: #d6d3d1; border-radius: 4px; }
+        .data-table th { position: sticky; top: 0; z-index: 10; }
+    </style>
+</head>
+    <!-- Body base: text-sm (14px) — igual que copilot-prototype -->
+    <body class="bg-white text-neutral-700 min-h-screen flex flex-col text-sm leading-6 font-sans">
+
+    <!-- ══════════════════════════════════════════
+         TOP NAVIGATION
+    ══════════════════════════════════════════ -->
+    <nav class="bg-[#044ACF] sm:bg-gradient-to-r sm:from-[#044ACF] sm:to-[#0082D2] text-white flex items-center justify-between px-base py-xs shrink-0 h-14">
+        <div class="flex items-center gap-base">
+            <button class="text-white hover:bg-white/10 p-1 rounded-base flex items-center justify-center">
+                <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+            <div class="flex items-center gap-xs">
+                <i data-lucide="anchor" class="w-5 h-5"></i>
+                <span class="font-condensed font-bold text-xl tracking-tight">schip.</span>
+            </div>
+        </div>
+        <div class="flex items-center gap-base">
+            <div class="relative cursor-pointer flex items-center justify-center">
+                <i data-lucide="bell" class="w-5 h-5"></i>
+                <!-- Badge: 10px intencional, es un chip numérico pequeño -->
+                <span class="absolute -top-1.5 -right-1.5 bg-white text-[#0067B8] text-[10px] font-bold px-1 py-0 rounded-full border border-[#0067B8] leading-tight">3</span>
+            </div>
+            <div class="flex items-center gap-xs cursor-pointer hover:bg-white/10 p-1.5 rounded-base transition-colors">
+                <!-- Avatar initials: text-xs (12px) — igual que repack-app "SC" -->
+                <div class="w-8 h-8 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-xs font-bold">MG</div>
+                <span class="text-sm font-medium hidden sm:block">Mariana Garcia</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ══════════════════════════════════════════
+         MAIN CONTENT
+    ══════════════════════════════════════════ -->
+    <main class="flex-1 flex flex-col">
+        <div class="px-base md:px-xl pt-lg pb-xxl">
+
+            <!-- Breadcrumb: text-xs (12px) — subtext de navegación -->
+            <nav class="flex items-center gap-xxs text-xs text-neutral-600 mb-xs" aria-label="Breadcrumb">
+                <a href="#" class="hover:text-primary-700 transition-colors">Smart Node</a>
+                <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                <a href="#" class="hover:text-primary-700 transition-colors">SNS_OMO</a>
+                <i data-lucide="chevron-right" class="w-3 h-3"></i>
+                <span class="text-neutral-900 font-medium">Reroute Metrics</span>
+            </nav>
+
+            <!-- Page Title Row -->
+            <div class="flex justify-between items-start md:items-center flex-col md:flex-row gap-base mb-lg">
+                <div>
+                    <!-- h1: text-2xl (24px) — igual que copilot-prototype -->
+                    <h1 class="text-2xl font-bold text-neutral-900 leading-tight">
+                        SNS_OMO — Reroute Metrics
+                        <span class="text-lg font-normal text-neutral-600 ml-1">(Detailed)</span>
+                    </h1>
+                    <!-- Subtitle: text-sm (14px) — cuerpo estándar -->
+                    <p class="text-sm text-neutral-600 mt-0.5 flex items-center gap-xs">
+                        <i data-lucide="calendar" class="w-3 h-3"></i>
+                        This week &nbsp;·&nbsp; Mon 5/5 – Sun 5/11
+                    </p>
+                </div>
+                <div class="flex items-center gap-xs flex-shrink-0">
+                    <!-- Buttons: text-sm (14px) — igual que .btn-primary en referencias -->
+                    <button class="bg-white border border-neutral-300 shadow-sm text-neutral-700 px-4 h-[32px] rounded-[6px] text-sm font-medium flex items-center gap-xs hover:bg-neutral-50 transition">
+                        <i data-lucide="download" class="w-3.5 h-3.5 text-neutral-500"></i> Export
+                    </button>
+                    <button class="bg-primary-500 hover:bg-primary-600 text-white px-4 h-[32px] rounded-[6px] text-sm font-medium flex items-center gap-xs transition shadow-sm">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- ─── KPI Cards ─── -->
+            <p class="text-xs font-bold uppercase tracking-widest text-neutral-600 mb-sm">Key Performance Indicators</p>
+            <section class="grid grid-cols-2 md:grid-cols-4 gap-xs mb-xl">
+
+                <!-- KPI 1: Reroutes This Week -->
+                <article class="bg-[#F8F9FA] border border-neutral-200 rounded-lg p-base flex flex-col justify-start items-start">
+                    <p class="text-[11px] font-bold uppercase text-neutral-900 mb-1 leading-tight">REROUTES<br>THIS WEEK</p>
+                    <p class="text-[35px] leading-none font-medium text-neutral-900 font-condensed">69</p>
+                    <div class="mt-1.5">
+                        <span class="text-xs text-neutral-600">avg 9.9/day</span>
+                    </div>
+                </article>
+
+                <!-- KPI 2: Avg Handling Time -->
+                <article class="bg-[#F8F9FA] border border-neutral-200 rounded-lg p-base flex flex-col justify-start items-start">
+                    <p class="text-[11px] font-bold uppercase text-neutral-900 mb-1 leading-tight">AVG HANDLING<br>TIME</p>
+                    <p class="text-[35px] leading-none font-medium text-neutral-900 font-condensed">3.8<span class="text-lg font-normal font-sans"> min</span></p>
+                    <div class="mt-1.5">
+                        <span class="text-xs text-success-700 font-semibold flex items-center gap-xxs">
+                            <i data-lucide="check" class="w-3 h-3"></i> Within ≤5 min
+                        </span>
+                    </div>
+                </article>
+
+                <!-- KPI 3: Hours Saved -->
+                <article class="bg-[#F8F9FA] border border-neutral-200 rounded-lg p-base flex flex-col justify-start items-start">
+                    <p class="text-[11px] font-bold uppercase text-neutral-900 mb-1 leading-tight">HOURS<br>SAVED</p>
+                    <p class="text-[35px] leading-none font-medium text-neutral-900 font-condensed">16.2<span class="text-lg font-normal font-sans"> hrs</span></p>
+                    <div class="mt-1.5">
+                        <span class="text-xs text-neutral-600">vs 30–40 min manual</span>
+                    </div>
+                </article>
+
+                <!-- KPI 4: First-Pass Success -->
+                <article class="bg-[#F8F9FA] border border-neutral-200 rounded-lg p-base flex flex-col justify-start items-start">
+                    <p class="text-[11px] font-bold uppercase text-neutral-900 mb-1 leading-tight">FIRST-PASS<br>SUCCESS</p>
+                    <p class="text-[35px] leading-none font-medium text-neutral-900 font-condensed">93%</p>
+                    <div class="mt-1.5">
+                        <span class="text-xs text-error-500 font-semibold flex items-center gap-xxs">
+                            <i data-lucide="trending-down" class="w-3 h-3"></i> Below ≥95%
+                        </span>
+                    </div>
+                </article>
+
+            </section>
+
+            <!-- ─── Dual-Axis Trend Chart ─── -->
+            <p class="text-xs font-bold uppercase tracking-widest text-neutral-600 mb-sm">Weekly Trends</p>
+            <section class="mb-xl">
+                <div class="bg-white border border-neutral-200 rounded-lg p-base">
+                    <div class="flex items-start justify-between mb-xs flex-wrap gap-xs">
+                        <div>
+                            <!-- Card h2: text-sm (14px) — alineado con copilot-prototype -->
+                            <h2 class="text-sm font-semibold text-neutral-900">Adoption &amp; Handling Time Trend</h2>
+                            <!-- Chart subtitle: text-xs (12px) -->
+                            <p class="text-xs text-neutral-600 mt-xxs">Dual-axis view: % eligible (left) vs min per reroute (right)</p>
+                        </div>
+                        <div class="flex items-center gap-base">
+                            <div class="flex items-center gap-xxs text-xs text-neutral-600">
+                                <span class="w-6 h-[2px] bg-primary-500 inline-block rounded"></span> Adoption %
+                            </div>
+                            <div class="flex items-center gap-xxs text-xs text-neutral-600">
+                                <span class="w-6 h-[2px] bg-[#7c3aed] inline-block rounded"></span> Handling Time
+                            </div>
+                        </div>
+                    </div>
+                    <div class="relative h-[280px]">
+                        <canvas id="dualAxisChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── Outcomes + By DC ─── -->
+            <p class="text-xs font-bold uppercase tracking-widest text-neutral-600 mb-sm">Outcomes &amp; DC Breakdown</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-base mb-xl">
+
+                <!-- Outcomes: horizontal bars + reasons -->
+                <div class="bg-white border border-neutral-200 rounded-lg p-base flex flex-col gap-sm">
+                    <div class="flex items-baseline justify-between">
+                        <h2 class="text-sm font-semibold text-neutral-900">Outcomes <span class="text-neutral-600 font-normal">(This Week)</span></h2>
+                        <span class="text-xs text-neutral-600">Mon 5/5 – Sun 5/11</span>
+                    </div>
+
+                    <!-- Success bar -->
+                    <div class="flex flex-col gap-xxs">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-xs">
+                                <i data-lucide="circle-check" class="w-3.5 h-3.5 text-success-700 flex-shrink-0"></i>
+                                <!-- Bar label: text-sm (14px) — texto de contenido principal -->
+                                <span class="text-sm font-medium text-neutral-900">Success</span>
+                            </div>
+                            <span class="text-sm font-semibold text-neutral-900 font-mono">93%</span>
+                        </div>
+                        <div class="w-full h-2 bg-neutral-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-success-500 rounded-full" style="width: 93%"></div>
+                        </div>
+                        <!-- Count sub-label: text-xs (12px) -->
+                        <span class="text-xs text-neutral-600">64 reroutes</span>
+                    </div>
+
+                    <!-- Rework bar -->
+                    <div class="flex flex-col gap-xxs">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-xs">
+                                <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-warning-500 flex-shrink-0"></i>
+                                <span class="text-sm font-medium text-neutral-900">Rework</span>
+                            </div>
+                            <span class="text-sm font-semibold text-neutral-900 font-mono">7%</span>
+                        </div>
+                        <div class="w-full h-2 bg-neutral-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-warning-500 rounded-full" style="width: 7%"></div>
+                        </div>
+                        <span class="text-xs text-neutral-600">5 reroutes</span>
+                    </div>
+
+                    <!-- Failed bar -->
+                    <div class="flex flex-col gap-xxs">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-xs">
+                                <i data-lucide="circle-x" class="w-3.5 h-3.5 text-neutral-300 flex-shrink-0"></i>
+                                <span class="text-sm font-medium text-neutral-500">Failed</span>
+                            </div>
+                            <span class="text-sm font-semibold text-neutral-500 font-mono">0%</span>
+                        </div>
+                        <div class="w-full h-2 bg-neutral-200 rounded-full overflow-hidden">
+                            <div class="h-full bg-neutral-300 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <span class="text-xs text-neutral-600">0 reroutes</span>
+                    </div>
+
+                    <!-- Rework reasons -->
+                    <div class="bg-neutral-50 border border-neutral-200 rounded-base p-sm mt-xxs">
+                        <!-- Reasons header: text-xs (12px) uppercase -->
+                        <p class="text-xs font-bold text-neutral-700 uppercase tracking-wider mb-xs">Reasons for rework (5)</p>
+                        <ul class="flex flex-col gap-xxs">
+                            <!-- List items: text-sm (14px) — texto de contenido -->
+                            <li class="flex items-center justify-between text-sm text-neutral-600">
+                                <span>BOL qty fix</span>
+                                <span class="font-mono text-neutral-900 font-medium">3</span>
+                            </li>
+                            <li class="flex items-center justify-between text-sm text-neutral-600">
+                                <span>Tracking update</span>
+                                <span class="font-mono text-neutral-900 font-medium">1</span>
+                            </li>
+                            <li class="flex items-center justify-between text-sm text-neutral-600">
+                                <span>DC change</span>
+                                <span class="font-mono text-neutral-900 font-medium">1</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="flex items-center justify-between border-t border-neutral-100 pt-sm">
+                        <p class="text-sm text-neutral-600">Total: <span class="font-mono font-semibold text-neutral-900">69 reroutes</span></p>
+                        <span class="text-xs text-neutral-600 font-mono">avg 9.9/day</span>
+                    </div>
+                </div>
+
+                <!-- Table: By DC -->
+                <div class="bg-white border border-neutral-200 rounded-lg overflow-hidden flex flex-col">
+                    <div class="flex items-center justify-between px-base py-sm border-b border-neutral-200 bg-neutral-50">
+                        <h2 class="text-sm font-semibold text-neutral-900">By DC</h2>
+                        <span class="text-xs font-mono text-neutral-600">5 locations</span>
+                    </div>
+                    <div class="overflow-x-auto flex-1">
+                        <table class="data-table w-full border-collapse">
+                            <thead>
+                                <tr>
+                                    <!-- Table headers: text-xs (12px) uppercase — sube desde 10px -->
+                                    <th class="text-left text-xs font-bold uppercase tracking-wider text-neutral-500 px-base py-xs border-b border-neutral-200 bg-neutral-50 whitespace-nowrap">DC Name</th>
+                                    <th class="text-right text-xs font-bold uppercase tracking-wider text-neutral-500 px-base py-xs border-b border-neutral-200 bg-neutral-50 whitespace-nowrap">Reroutes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="hover:bg-neutral-50 transition-colors">
+                                    <!-- Table cells primary: text-sm (14px) — sube desde 13px -->
+                                    <td class="px-base py-xs border-b border-neutral-100 text-sm font-medium text-neutral-900">Grand Prairie</td>
+                                    <!-- Table cells numeric: text-sm (14px) — sube desde 12px -->
+                                    <td class="px-base py-xs border-b border-neutral-100 text-right font-mono text-sm text-neutral-700">18</td>
+                                </tr>
+                                <tr class="hover:bg-neutral-50 transition-colors">
+                                    <td class="px-base py-xs border-b border-neutral-100 text-sm font-medium text-neutral-900">Meadville</td>
+                                    <td class="px-base py-xs border-b border-neutral-100 text-right font-mono text-sm text-neutral-700">16</td>
+                                </tr>
+                                <tr class="hover:bg-neutral-50 transition-colors">
+                                    <!-- Parenthetical: text-xs (12px) — nota secundaria -->
+                                    <td class="px-base py-xs border-b border-neutral-100 text-sm font-medium text-neutral-900">Indy <span class="text-neutral-400 text-xs font-normal">(PepFlex)</span></td>
+                                    <td class="px-base py-xs border-b border-neutral-100 text-right font-mono text-sm text-neutral-700">14</td>
+                                </tr>
+                                <tr class="hover:bg-neutral-50 transition-colors">
+                                    <td class="px-base py-xs border-b border-neutral-100 text-sm font-medium text-neutral-900">Phoenix <span class="text-neutral-400 text-xs font-normal">(PepFlex)</span></td>
+                                    <td class="px-base py-xs border-b border-neutral-100 text-right font-mono text-sm text-neutral-700">12</td>
+                                </tr>
+                                <tr class="hover:bg-neutral-50 transition-colors">
+                                    <td class="px-base py-xs text-sm font-medium text-neutral-900">Joliet <span class="text-neutral-400 text-xs font-normal">(PepFlex)</span></td>
+                                    <td class="px-base py-xs text-right font-mono text-sm text-neutral-700">9</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="px-base py-sm border-t border-neutral-100 text-xs text-neutral-600">
+                        Total DCs: <span class="font-mono font-semibold text-neutral-900">5</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ─── Reroute Type Breakdown ─── -->
+            <p class="text-xs font-bold uppercase tracking-widest text-neutral-600 mb-sm">Drill-Down</p>
+            <div class="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+
+                <!-- Card header -->
+                <div class="px-base py-sm border-b border-neutral-200 bg-neutral-50 flex items-baseline justify-between">
+                    <h2 class="text-sm font-semibold text-neutral-900">Reroute Type Breakdown</h2>
+                    <span class="text-xs text-neutral-600">5 scenarios · 69 total reroutes</span>
+                </div>
+
+                <div class="p-base overflow-x-auto">
+                    <table class="data-table w-full border-collapse">
+                        <thead>
+                            <tr>
+                                <th class="text-left text-xs font-bold uppercase tracking-wider text-neutral-600 px-base py-xs border-b border-neutral-200 bg-neutral-50 whitespace-nowrap">
+                                    <div class="flex items-center gap-xxs">Scenario <i data-lucide="chevrons-up-down" class="w-3 h-3 opacity-50"></i></div>
+                                </th>
+                                <th class="text-right text-xs font-bold uppercase tracking-wider text-neutral-600 px-base py-xs border-b border-neutral-200 bg-neutral-50 whitespace-nowrap">
+                                    <div class="flex items-center justify-end gap-xxs">Count <i data-lucide="chevrons-up-down" class="w-3 h-3 opacity-50"></i></div>
+                                </th>
+                                <th class="text-right text-xs font-bold uppercase tracking-wider text-neutral-600 px-base py-xs border-b border-neutral-200 bg-neutral-50 whitespace-nowrap">
+                                    <div class="flex items-center justify-end gap-xxs">Success % <i data-lucide="chevrons-up-down" class="w-3 h-3 opacity-50"></i></div>
+                                </th>
+                                <th class="text-right text-xs font-bold uppercase tracking-wider text-neutral-600 px-base py-xs border-b border-neutral-200 bg-neutral-50 whitespace-nowrap">
+                                    <div class="flex items-center justify-end gap-xxs">Avg Time <i data-lucide="chevrons-up-down" class="w-3 h-3 opacity-50"></i></div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="hover:bg-neutral-50 transition-colors">
+                                <td class="px-base py-xs border-b border-neutral-100 text-sm font-medium text-neutral-900">
+                                    PepFlex → PepFlex <span class="text-neutral-600 text-xs font-normal">(new SO)</span>
+                                </td>
+                                <td class="px-base py-xs border-b border-neutral-100 text-right font-mono text-sm text-neutral-700">18</td>
+                                <td class="px-base py-xs border-b border-neutral-100 text-right font-mono text-sm text-neutral-700">94%</td>
+                                <td class="px-base py-xs border-b border-neutral-100 text-right font-mono text-sm text-neutral-700">4.0 min</td>
+                            </tr>
+                            <tr class="hover:bg-neutral-50 transition-colors">
+                                <td class="px-base py-xs border-b border-neutral-100 text-sm font-medium text-neutral-900">
+                                    Non-PepFlex → Non-PepFlex <span class="text-neutral-600 text-xs font-normal">(new SO)</span>
+                                </td>
+                                <td class="px-base py-xs border-b border-neutral-100 text-right font-mono text-sm text-neutral-700">16</td>
+                                <td class="px-base py-xs border-b border-neutral-100 text-right font-mono text-sm text-neutral-700">94%</td>
+                                <td class="px-base py-xs border-b border-neutral-100 text-right font-mono text-sm text-neutral-700">3.5 min</td>
+                            </tr>
+                            <tr class="hover:bg-neutral-50 transition-colors">
+                                <td class="px-base py-xs border-b border-neutral-100 text-sm font-medium text-neutral-900">
+                                    PepFlex → Non-PepFlex <span class="text-neutral-600 text-xs font-normal">(new SO)</span>
+                                </td>
+                                <td class="px-base py-xs border-b border-neutral-100 text-right font-mono text-sm text-neutral-700">14</td>
+                                <td class="px-base py-xs border-b border-neutral-100 text-right">
+                                    <span class="font-mono text-sm text-warning-700 font-semibold">85%</span>
+                                </td>
+                                <td class="px-base py-xs border-b border-neutral-100 text-right font-mono text-sm text-neutral-700">4.2 min</td>
+                            </tr>
+                            <tr class="hover:bg-neutral-50 transition-colors">
+                                <td class="px-base py-xs border-b border-neutral-100 text-sm font-medium text-neutral-900">
+                                    Non-PepFlex → PepFlex <span class="text-neutral-600 text-xs font-normal">(existing SO)</span>
+                                </td>
+                                <td class="px-base py-xs border-b border-neutral-100 text-right font-mono text-sm text-neutral-700">12</td>
+                                <td class="px-base py-xs border-b border-neutral-100 text-right">
+                                    <span class="font-mono text-sm text-error-500 font-semibold">75%</span>
+                                </td>
+                                <td class="px-base py-xs border-b border-neutral-100 text-right font-mono text-sm text-neutral-700">4.5 min</td>
+                            </tr>
+                            <tr class="hover:bg-neutral-50 transition-colors">
+                                <td class="px-base py-xs text-sm font-medium text-neutral-700">Other</td>
+                                <td class="px-base py-xs text-right font-mono text-sm text-neutral-700">9</td>
+                                <td class="px-base py-xs text-right font-mono text-sm text-neutral-700">96%</td>
+                                <td class="px-base py-xs text-right font-mono text-sm text-neutral-700">3.6 min</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+        </div><!-- /px-base -->
+    </main>
+
+    <!-- ══════════════════════════════════════════
+         CHART.JS INITIALIZATION
+    ══════════════════════════════════════════ -->
+    <script>
+        Chart.defaults.font.family = "'Roboto', sans-serif";
+        Chart.defaults.font.size   = 12;
+        Chart.defaults.color       = '#78716c'; // neutral-500
+
+        const DAYS      = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const gridColor = '#e7e5e4'; // neutral-200
+
+        // ── Dual-Axis Chart: Adoption + Handling Time ──
+        new Chart(document.getElementById('dualAxisChart'), {
+            type: 'line',
+            data: {
+                labels: DAYS,
+                datasets: [
+                    {
+                        label: 'Adoption %',
+                        data: [62, 65, 68, 70, 68, 70, 72],
+                        tension: 0.35,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#0597F2',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        borderColor: '#0597F2',
+                        borderWidth: 2,
+                        fill: false,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Handling Time (min)',
+                        data: [4.2, 4.0, 3.9, 3.8, 3.9, 3.7, 3.8],
+                        tension: 0.35,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#7c3aed',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        borderColor: '#7c3aed',
+                        borderWidth: 2,
+                        fill: false,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1c1917',
+                        titleColor: '#a8a29e',
+                        bodyColor: '#fff',
+                        padding: 10,
+                        callbacks: {
+                            label: ctx => ctx.datasetIndex === 0
+                                ? ' Adoption: ' + ctx.parsed.y + '%'
+                                : ' Handling: ' + ctx.parsed.y + ' min'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: gridColor },
+                        ticks: { font: { size: 12 } }
+                    },
+                    y: {
+                        type: 'linear',
+                        position: 'left',
+                        min: 55,
+                        max: 75,
+                        grid: { color: gridColor },
+                        ticks: { stepSize: 5, callback: v => v + '%', font: { size: 12 } },
+                        title: { display: true, text: 'Adoption %', color: '#0597F2', font: { size: 11 } }
+                    },
+                    y1: {
+                        type: 'linear',
+                        position: 'right',
+                        min: 3,
+                        max: 5,
+                        grid: { drawOnChartArea: false },
+                        ticks: { stepSize: 0.5, callback: v => v + ' m', font: { size: 12 } },
+                        title: { display: true, text: 'Handling Time', color: '#7c3aed', font: { size: 11 } }
+                    }
+                }
+            }
+        });
+
+        Chart.defaults.font.color = '#57534e'; // neutral-600 — mejor contraste en chart
+
+        lucide.createIcons();
+    </script>
+
+</body>
+</html>
